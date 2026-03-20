@@ -1,6 +1,6 @@
 ---
 name: uitdl-authoring
-description: Author, refactor, validate, and operationalize User Interface Transition Diagram Language (UITDL) specifications and validator workflows using the current recommended grammar and semantics from the source paper and bundled references. Use when Codex must create or edit `.uitdl`-style text, define UITD/UI/FRAGMENT/TRANSITION structures, enforce grammar and semantic consistency, diagnose validation errors, or prepare UITDL content for tools that generate diagrams.
+description: Author, refactor, validate, and operationalize User Interface Transition Diagram Language (UITDL) specifications using the current recommended grammar and semantics from the source paper and bundled references. Use when Codex must create or edit `.uitdl`-style text, define UITD/UI/FRAGMENT/TRANSITION structures, enforce grammar and semantic consistency, diagnose validation errors, or prepare UITDL content for tools that generate diagrams.
 ---
 
 # UITDL Authoring
@@ -30,18 +30,15 @@ Follow the current recommended grammar and semantics from the source paper and t
    - Optional `AND "Condition"`
    - Optional `WIDTH n`
 6. Run a semantic review before finalizing.
-7. Run the CLI validator before finalizing whenever it is available in the current project or distributed as a reusable package:
-   - Preferred cross-machine invocation for the published validator: `npx uitdl-validator@latest path/to/file.uitd`
-   - If the package is already installed in the current project, use the exposed CLI name directly: `npx uitd-validate path/to/file.uitd`
-   - To install it for repeatable local use in another project: `npm install --save-dev uitdl-validator`
-   - After installing it in a project, validate files with `npx uitd-validate path/to/file.uitd`
+7. Run the CLI validator before finalizing whenever it is available in the current project or as an installed package:
+   - Preferred ad hoc invocation of the official validator package: `npx uitdl-validator@latest path/to/file.uitd`
+   - For repeatable project use, install the official validator package: `npm install --save-dev uitdl-validator`
+   - After installation, use the exposed CLI name directly: `npx uitd-validate path/to/file.uitd`
    - Workspace-local script during development: `npm run validate:uitd -- path/to/file.uitd`
    - For generated content without a file yet: pipe the UITDL text to `npm run validate:uitd --` or `npx uitd-validate`
    - Treat error-level validator output as blocking. Do not finalize a UITDL result without reporting or resolving those errors.
    - Prefer guidance that does not depend on a specific local filesystem path. Treat absolute or relative path installs as development-only fallbacks, not as the primary recommended workflow.
-   - The current published package name is `uitdl-validator`. Prefer that concrete package name in examples unless the task is explicitly about defining a different package.
-   - Use `uitdl-validator` as a dev dependency for repeatable project validation when a published dependency is preferable to local workspace wiring.
-   - For CI or reproducible automation, pin an explicit version instead of `@latest`.
+   - For CI or reproducible automation, pin an explicit validator version instead of `@latest`.
    - Keep local path installs or `npm link` only for contributor workflows when testing unpublished changes.
    - Relative UITDL file paths are preferred for normal use. The validator should resolve them from the project root.
 

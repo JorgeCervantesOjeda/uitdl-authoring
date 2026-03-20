@@ -1,4 +1,4 @@
 interface:
   display_name: "UITDL Authoring"
-  short_description: "Create, validate, and package UITDL workflows"
-  default_prompt: "Use $uitdl-authoring to draft, fix, validate, or explain packaging and cross-machine use of a UITDL specification or validator CLI."
+  short_description: "Create and validate UITDL models"
+  default_prompt: "Use $uitdl-authoring to draft, fix, or validate a UITDL UITD specification from my UI flow."
