@@ -75,6 +75,14 @@ QUOTEDSTRING ::= '"' QUOTEDCHAR* '"'
 17. Minimize redundant transitions: avoid parallel rules that represent the same event flow unless conditions are explicit, necessary, and non-overlapping.
 18. Keep fragments medium-grained: split oversized fragments by workflow stage, but avoid trivial one-off fragments that do not improve readability.
 
+## Validator distribution guidance
+
+- Prefer a published Node CLI package over machine-specific filesystem installs when the validator must work from any computer.
+- Expose the command through the package `bin` field so users can run `npx uitd-validate ...` or `npx <published-package>@latest ...`.
+- Document local path installs and `npm link` only as contributor/development workflows for unpublished builds.
+- Prefer relative UITDL file paths in examples so commands stay portable across operating systems and machines.
+- For CI or automation, pin an explicit package version rather than relying on `@latest`.
+
 ## Diagnostic mapping
 
 - `root construct mismatch`: Replace `MODEL`-style root with `UITD "Title" { ... }`.

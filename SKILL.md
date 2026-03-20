@@ -1,12 +1,12 @@
-﻿---
+---
 name: uitdl-authoring
-description: Author, refactor, and validate User Interface Transition Diagram Language (UITDL) specifications using the current recommended grammar and semantics from the source paper and bundled references. Use when Codex must create or edit `.uitdl`-style text, define UITD/UI/FRAGMENT/TRANSITION structures, enforce grammar and semantic consistency, diagnose validation errors, or prepare UITDL content for tools that generate diagrams.
+description: Author, refactor, validate, and operationalize User Interface Transition Diagram Language (UITDL) specifications and validator workflows using the current recommended grammar and semantics from the source paper and bundled references. Use when Codex must create or edit `.uitdl`-style text, define UITD/UI/FRAGMENT/TRANSITION structures, enforce grammar and semantic consistency, diagnose validation errors, or prepare UITDL content for tools that generate diagrams.
 ---
 
 # UITDL Authoring
 
 Use this skill to produce valid, maintainable UITDL models from product flows, user stories, or existing UI documentation.
-Follow the current recommended grammar from `UITDL_paper.tex` and the bundled reference.
+Follow the current recommended grammar and semantics from the source paper and the bundled reference.
 
 ## Follow this workflow
 
@@ -30,27 +30,24 @@ Follow the current recommended grammar from `UITDL_paper.tex` and the bundled re
    - Optional `AND "Condition"`
    - Optional `WIDTH n`
 6. Run a semantic review before finalizing.
-7. Run the CLI validator before finalizing whenever it is available in the current project or installed from the shared `uitd-editor` package:
-   - Workspace-local script: `npm run validate:uitd -- path/to/file.uitd`
-   - Installed or linked package from another project: `npx uitd-validate path/to/file.uitd`
+7. Run the CLI validator before finalizing whenever it is available in the current project or distributed as a reusable package:
+   - Preferred cross-machine invocation for the published validator: `npx uitdl-validator@latest path/to/file.uitd`
+   - If the package is already installed in the current project, use the exposed CLI name directly: `npx uitd-validate path/to/file.uitd`
+   - To install it for repeatable local use in another project: `npm install --save-dev uitdl-validator`
+   - After installing it in a project, validate files with `npx uitd-validate path/to/file.uitd`
+   - Workspace-local script during development: `npm run validate:uitd -- path/to/file.uitd`
    - For generated content without a file yet: pipe the UITDL text to `npm run validate:uitd --` or `npx uitd-validate`
    - Treat error-level validator output as blocking. Do not finalize a UITDL result without reporting or resolving those errors.
-   - This skill does not assume a fixed filesystem path for the validator executable. It assumes only one of these invocation modes is available: a workspace script (`npm run validate:uitd`) or an installed/linked package command (`npx uitd-validate`).
-   - Relative paths are preferred for normal use. The validator resolves them against the project root when `npx` runs from a broken Windows working directory.
-   - On Windows, prefer an absolute install path for the shared package if a relative path is ambiguous. Example:
-     `npm install --save-dev "C:\Users\usuario\ownCloud2\UITD text language\uitd-editor"`
-   - If using a relative path from `C:\Users\usuario\ownCloud2\TOP-Racing React Firebase\top_racing`, the correct relative example is:
-     `npm install --save-dev "..\..\UITD text language\uitd-editor"`
-   - If `npm install` via path is inconvenient during development, use linking instead:
-     `cd "C:\Users\usuario\ownCloud2\UITD text language\uitd-editor" && npm link`
-     then in the other project:
-     `npm link uitd-editor`
-   - After installation or linking in another project, validate with:
-     `npx uitd-validate .\path\to\file.uitd`
+   - Prefer guidance that does not depend on a specific local filesystem path. Treat absolute or relative path installs as development-only fallbacks, not as the primary recommended workflow.
+   - The current published package name is `uitdl-validator`. Prefer that concrete package name in examples unless the task is explicitly about defining a different package.
+   - Use `uitdl-validator` as a dev dependency for repeatable project validation when a published dependency is preferable to local workspace wiring.
+   - For CI or reproducible automation, pin an explicit version instead of `@latest`.
+   - Keep local path installs or `npm link` only for contributor workflows when testing unpublished changes.
+   - Relative UITDL file paths are preferred for normal use. The validator should resolve them from the project root.
 
 ## Inclusion and nesting semantics
 
-- Do not infer UITDL nesting semantics only from the compact grammar or checklist. When a task depends on reusable UIs, nested UIs, menus, inherited availability of actions, or inherited transitions by inclusion, review the extended semantic source at `C:\Users\usuario\ownCloud2\QualiTeam\UITD language.tex` before modeling.
+- Do not infer UITDL nesting semantics only from the compact grammar or checklist. When a task depends on reusable UIs, nested UIs, menus, inherited availability of actions, or inherited transitions by inclusion, review the extended semantic source if it is bundled or otherwise provided in the current task context before modeling.
 - Distinguish strictly between actions defined in a UI and actions available to the user in a given interface state.
 - If a containment reference such as `7[1]` appears in any fragment, that establishes a global inclusion fact in the whole UITD: `UI 7` contains `UI 1` in the modeled system, even if other fragments do not redraw that containment explicitly.
 - In `DRAW`, `7[1]` means that `UI 1` is drawn as contained in `UI 7` for that fragment view. This establishes the inclusion relation in the global model.
@@ -73,7 +70,7 @@ Follow the current recommended grammar from `UITDL_paper.tex` and the bundled re
 - Distinguish explicitly between navigation UIs and non-navigation UIs. Navigation UIs exist primarily to provide reusable navigation actions and are natural candidates for inclusion in many other UIs.
 - Only use containment/inclusion for one of these two reasons: (1) the contained UI is a reusable element that appears in multiple other UIs, or (2) the container UI is a true extension of the contained UI, so the model may intentionally navigate to the contained UI when only its actions should be available, or to the container UI when the user should have both the contained actions and the additional actions of the container.
 - Do not include one UI inside another merely because they are related in topic or because the nesting seems convenient. If an inclusion is not justified by reusable repetition or by a real extension relationship, it is semantically wrong and must be removed.
-- If the task depends on inclusion semantics and the source is still ambiguous, stop and ask instead of assuming.
+- If the task depends on inclusion semantics and the source is unavailable or still ambiguous, stop and ask instead of assuming.
 - When multiple UIs share the same action with the same destination, prefer modeling that behavior through an included reusable UI instead of repeating equivalent transitions in each concrete UI.
 - A reusable UI must be illustrated in at least one dedicated fragment that shows that reusable UI as a standalone draw and shows its outgoing transitions explicitly.
 - That dedicated fragment must be specialized only in the reusable UI: every transition in that fragment must originate from that reusable UI. Do not mix transitions from other UIs in the same fragment.
@@ -144,5 +141,3 @@ Follow the current recommended grammar from `UITDL_paper.tex` and the bundled re
 ## Reference
 
 Use `references/uitdl-grammar-and-validation.md` for the compact grammar, semantics, and validation checklist.
-
-
