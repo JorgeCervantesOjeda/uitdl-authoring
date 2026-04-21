@@ -46,6 +46,7 @@ QUOTEDSTRING ::= '"' QUOTEDCHAR* '"'
 - Use bracketed `DRAW` references (for example `A[B[C]]`) to encode containment in the model and in the fragment view.
 - Use parenthesized transition references (for example `A(B(C))`) only to refer to the specific contained instance drawn inside a container when a transition must target or originate from that instance.
 - For backward compatibility, tooling may still accept the older parenthesized containment notation inside `DRAW`, but the recommended emitted syntax is bracketed.
+- Treat a contained UI as reusable only when it is included in at least two distinct container UIs. If a contained UI appears in only one container, model that inclusion as an extension/composed-state relation rather than describing it as reuse.
 - Treat `WIDTH` as strict presentation metadata:
   - `WIDTH n;` means max characters per line before wrapping.
   - Wrapping must not split words.
