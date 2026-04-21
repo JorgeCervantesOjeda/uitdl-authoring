@@ -42,6 +42,20 @@ Follow the current recommended grammar and semantics from the source paper and t
    - Keep local path installs or `npm link` only for contributor workflows when testing unpublished changes.
    - Relative UITDL file paths are preferred for normal use. The validator should resolve them from the project root.
 
+## Render UITDL diagrams to SVG
+
+- Treat rendering as an operational/export step after syntactic and semantic validation. Do not use the generated diagram as evidence that the UITDL model is semantically correct.
+- When the local `UITD text language/uitd-editor` workspace is available, use its ELK rendering script to convert `.uitd` to both D2 and SVG:
+  - Windows path observed in this environment: `C:\Users\usuario\ownCloud2\UITD text language\uitd-editor\scripts\render-uitd-elk.mjs`
+  - From that workspace, run: `npm run uitd:elk -- input.uitd output.elk.d2 output.elk.svg`
+  - Example with absolute paths: `npm run uitd:elk -- "C:\path\flow.uitd" "C:\path\flow.elk.d2" "C:\path\flow.elk.svg"`
+- The observed ELK flow is: `.uitd` -> `parseUITDL` -> `translateToD2` -> `@terrastruct/d2` compile with `layout: "elk"` -> SVG.
+- The same workspace also exposes generic D2 rendering helpers:
+  - `npm run d2:elk -- input.d2 output.svg`
+  - `npm run d2:dagre -- input.d2 output.svg`
+- There is no confirmed direct `UITD -> Dagre -> SVG` script in that workspace. For Dagre, first generate or obtain the D2 source, then render that `.d2` with `d2:dagre`.
+- If this local workspace is absent, stale, or unavailable, state that the rendering path is unverified in the current environment and fall back to emitting valid UITDL plus D2 source when possible.
+
 ## Inclusion and nesting semantics
 
 - Do not infer UITDL nesting semantics only from the compact grammar or checklist. When a task depends on reusable UIs, nested UIs, menus, inherited availability of actions, or inherited transitions by inclusion, review the extended semantic source if it is bundled or otherwise provided in the current task context before modeling.
