@@ -1,19 +1,32 @@
 ---
 name: uitdl-authoring
-description: Author, refactor, validate, and operationalize User Interface Transition Diagram Language (UITDL) specifications using the current recommended grammar and semantics from the source paper and bundled references. Use when Codex must create or edit `.uitdl`-style text, define UITD/UI/FRAGMENT/TRANSITION structures, enforce grammar and semantic consistency, diagnose validation errors, or prepare UITDL content for tools that generate diagrams.
+description: Author, refactor, validate, and operationalize User Interface Transition Diagram Language (UITDL) specifications using the bundled grammar, semantics, validation checklist, and UITD Editor conventions. Use when Codex or ChatGPT must create or edit `.uitdl`-style text, define UITD/UI/FRAGMENT/TRANSITION structures, enforce grammar and semantic consistency, diagnose validation errors, or prepare UITDL content for UITD Editor.
+metadata:
+  version: "1.0.0"
 ---
 
 # UITDL Authoring
 
-Use this skill to produce valid, maintainable UITDL models from product flows, user stories, or existing UI documentation.
-Follow the current recommended grammar and semantics from the source paper and the bundled reference.
+Use this skill to produce valid, maintainable UITDL models from product flows, user stories, existing UI documentation, or UITD Editor diagrams.
+Follow the current recommended grammar and semantics from this skill and the bundled reference.
+
+## Versioning
+
+- The canonical skill version is `metadata.version` in this file and must use `MAJOR.MINOR.PATCH` format.
+- Start the version at `1.0.0` when the skill has no previous published version and is already usable as a complete workflow.
+- Increment `MAJOR` for incompatible instructions, changed UITDL semantics, or changes that invalidate established output or workflows.
+- Increment `MINOR` for new backward-compatible capabilities, validation guidance, or supported editor workflows.
+- Increment `PATCH` for corrections, clarifications, or maintenance that does not change the skill contract or supported behavior.
+- Every change to this skill or its bundled references must update `metadata.version` and prepend a matching entry to `CHANGELOG.md`.
+- If the version in `SKILL.md` and the newest changelog entry differ, treat the release as inconsistent and resolve the mismatch before reporting it as complete.
+- Do not infer the current version from a Git tag, generated artifact, or prior summary; read it from `SKILL.md`.
 
 ## Follow this workflow
 
-- Never use this skill from memory, a prior summary, or an approximate recollection. Re-open the skill text and rely on the written rules every time the task depends on UITDL semantics, validation, reuse, nesting, fragment design, or repair decisions.
-- Never assume UITDL behavior, review criteria, or repair strategy unless it is explicitly supported by written rules in this skill or by the extended source explicitly referenced by this skill. If a rule is not written here and not confirmed in the referenced source, treat it as unconfirmed and do not rely on it.
+- Never use this skill from memory, a prior summary, or an approximate recollection. Rely on the written rules included in the current conversation or bundled with the app every time the task depends on UITDL semantics, validation, reuse, nesting, fragment design, or repair decisions.
+- Never assume UITDL behavior, review criteria, or repair strategy unless it is explicitly supported by written rules in this skill, the bundled reference, or explicit validation issues provided by UITD Editor. If a rule is not written here and not confirmed by provided validation output, treat it as unconfirmed and do not rely on it.
 - Use square brackets in new `DRAW` output to express containment (for example `7[1]`). Keep parenthesized containment in `DRAW` only when preserving a legacy model verbatim. The parser may accept both, but the recommended emitted syntax is bracketed.
-- Use parenthesized references in `TRANSITION` only to point to a specific contained instance drawn in the fragment (for example `to 7(1)`).
+- Use parenthesized references in `TRANSITION` only to point to a specific contained instance drawn in the fragment (for example `to 7(1)` or `to 2(3(0))`). For destination behavior, the effective destination is the innermost UI: `to 2(3(0))` activates `UI 0` alone, not `UI 3` or `UI 2`.
 
 1. Translate the input flow into a single `UITD "Title" { ... }` with explicit `UI` states.
 2. Define each `UI` with:
@@ -29,32 +42,60 @@ Follow the current recommended grammar and semantics from the source paper and t
    - `if user VERB "Complement"`
    - Optional `AND "Condition"`
    - Optional `WIDTH n`
+   - Make the transition phrase read naturally as much as possible: use `clicks "visible control label"` for direct UI gestures, and use semantic verbs such as `deletes "affected object"` for behavioral effects.
+   - When a dynamic or repeated control keeps the same visible label, declare one action using that label. If its destination or behavior depends on model data such as whether guards exist, express the alternatives as guarded transitions of that same action; never encode the model-derived mode as separate action labels such as `"Preview action without guard"` and `"Preview action with guard"`.
+   - Example: declare `clicks "Preview action"` once, then use `AND "the selected action has no guards"` and `AND "the selected action has guards"` on separate transitions when those predicates are mutually exclusive and evaluated before the transition fires.
+   - Treat `AND "Condition"` as a transition guard: the condition must be a proposition evaluated before or at the moment the transition is triggered, and it must determine whether that transition may fire.
+   - Use `AND` only for text that can already be true or false in the current interaction context. If the text answers "what must already be true for this transition to happen?", it may belong in `AND`.
+   - Do not use `AND` for effects, outcomes, side effects, postconditions, logging, persistence, or system work that happens after the transition fires. If the text answers "what happens after this transition happens?", it does not belong in `AND`.
 6. Run a semantic review before finalizing.
-7. Run the CLI validator before finalizing whenever it is available in the current project or as an installed package:
-   - Preferred ad hoc invocation of the official validator package: `npx uitdl-validator@latest path/to/file.uitd`
-   - For repeatable project use, install the official validator package: `npm install --save-dev uitdl-validator`
-   - After installation, use the exposed CLI name directly: `npx uitd-validate path/to/file.uitd`
-   - Workspace-local script during development: `npm run validate:uitd -- path/to/file.uitd`
-   - For generated content without a file yet: pipe the UITDL text to `npm run validate:uitd --` or `npx uitd-validate`
+   - Before finalizing, scan every `UI` action and `TRANSITION` condition that uses semantic verbs such as `deletes`, `saves`, `uploads`, or `downloads`.
+   - If the quoted complement is a visible button, link, menu item, or control label, rewrite the action as `clicks "label"` unless a different direct-interaction verb is more precise.
+   - Use semantic verbs only with affected domain objects or artifacts: prefer `deletes "registro"`, `saves "formulario"`, `uploads "archivo"`, and `downloads "reporte"`; avoid `deletes "Eliminar"`, `deletes "Confirmar"`, `saves "Guardar"`, or similar verb-plus-button-label phrases.
+   - Scan every `AND "Condition"` and keep it only when it is a real guard that can be true or false before or at trigger time. Move important outcomes into a separate destination UI, transition, or documentation outside `AND`.
+7. Validate before finalizing whenever validation is available:
+   - In UITD Editor, paste the UITDL into the text panel and use its diagnostics as the blocking source of truth.
+   - In an AI review prompt copied from UITD Editor, use the included validator errors and warnings as evidence; do not invent additional tool results.
+   - In this repository, the canonical validator is maintained in `src/validation/uitdlCanonical/` and does not depend on an external validator package.
+   - Workspace-local validation: `npm run validate:uitd -- path/to/file.uitd`
+   - For generated content without a file: pipe the UITDL text to `npm run validate:uitd --`
    - Treat error-level validator output as blocking. Do not finalize a UITDL result without reporting or resolving those errors.
    - Prefer guidance that does not depend on a specific local filesystem path. Treat absolute or relative path installs as development-only fallbacks, not as the primary recommended workflow.
-   - For CI or reproducible automation, pin an explicit validator version instead of `@latest`.
-   - Keep local path installs or `npm link` only for contributor workflows when testing unpublished changes.
-   - Relative UITDL file paths are preferred for normal use. The validator should resolve them from the project root.
+   - For CI or reproducible automation, run the validator from the checked-out project so parser and rule changes are versioned together.
+   - Relative UITDL file paths are preferred for normal use. The project-owned CLI resolves them from the project root.
 
-## Render UITDL diagrams to SVG
+## UITD Editor usage
 
-- Treat rendering as an operational/export step after syntactic and semantic validation. Do not use the generated diagram as evidence that the UITDL model is semantically correct.
-- When the local `UITD text language/uitd-editor` workspace is available, use its ELK rendering script to convert `.uitd` to both D2 and SVG:
-  - Windows path observed in this environment: `C:\Users\usuario\ownCloud2\UITD text language\uitd-editor\scripts\render-uitd-elk.mjs`
-  - From that workspace, run: `npm run uitd:elk -- input.uitd output.elk.d2 output.elk.svg`
-  - Example with absolute paths: `npm run uitd:elk -- "C:\path\flow.uitd" "C:\path\flow.elk.d2" "C:\path\flow.elk.svg"`
-- The observed ELK flow is: `.uitd` -> `parseUITDL` -> `translateToD2` -> `@terrastruct/d2` compile with `layout: "elk"` -> SVG.
-- The same workspace also exposes generic D2 rendering helpers:
-  - `npm run d2:elk -- input.d2 output.svg`
-  - `npm run d2:dagre -- input.d2 output.svg`
-- There is no confirmed direct `UITD -> Dagre -> SVG` script in that workspace. For Dagre, first generate or obtain the D2 source, then render that `.d2` with `d2:dagre`.
-- If this local workspace is absent, stale, or unavailable, state that the rendering path is unverified in the current environment and fall back to emitting valid UITDL plus D2 source when possible.
+- Treat UITD Editor as the primary user-facing environment for applying, previewing, diagnosing, and exporting UITDL.
+- The recommended user flow is: write or paste UITDL in the text panel, resolve diagnostics, use `Preview HTML` to walk through behavior, use `Generate D2` for a derived diagram, then use `Apply to diagram` when there are no errors.
+- `Preview HTML`, D2 generation, ELK/Dagre rendering, SVG export, and layout simulation are operational/export steps after validation. They do not prove that the UITDL model is semantically correct.
+- UITDL does not declare an initial state. UITD Editor's preview starts from the first declared `UI` and lets the user choose another current UI.
+- UITD Editor does not evaluate guard truth automatically. A conditional action opens a guard-selection dialog; an unconditional action navigates immediately.
+- D2 is a derived presentation artifact. Editing D2 does not modify UITDL or the visual canvas.
+- Do not include machine-specific filesystem paths, local workspace names, unpublished package paths, or contributor-only scripts in instructions intended for end users.
+- For local contributor work, prefer the scripts documented by the current app repository, such as `npm run validate:uitd -- path/to/file.uitd`, and treat local path installs as development-only details.
+
+## Editor synchronization and persistence
+
+- Keep the visual canvas and the UITDL draft conceptually separate: the canvas is editable visual state, while text is validated and applied explicitly unless one live-sync direction is enabled.
+- `Live from canvas` and `Live to canvas` are mutually exclusive. Never assume bidirectional synchronization; enabling one direction disables the other.
+- In `Live to canvas`, validate before changing the canvas. On validator errors, preserve the last valid canvas; warnings may continue but must remain visible.
+- A declared `UI` action does not create a visual action node by itself. It is materialized visually only when used by a `TRANSITION`; an unused declaration is a warning.
+- Incremental synchronization should preserve equivalent visual entities when possible. The editor uses stable semantic keys for UI identity, action origin/verb/complement, condition origin/action/title, transition endpoints/action/guard, and `DRAW` containment. These are editor reconciliation conventions, not additional UITDL semantics.
+- Applying valid text to the canvas is a visible, reversible operation: report progress, apply the model, adjust affected layout, and preserve the application as one history entry. Layout simulation is heuristic and does not validate the model.
+- Drafts and text-panel preferences use `localStorage` when available. If storage or another capability fails, preserve the useful in-memory behavior when possible and report the cause, fallback, and impact; never make the fallback silent.
+
+## Preview, formatting, D2, and export behavior
+
+- `Preview HTML` starts from the first declared `UI` because UITDL has no initial-state declaration; allow the user to choose another current UI.
+- Preview exposes included UIs and inherited actions. It does not evaluate guards from real application context: an unconditional action navigates directly, while a conditional action requires guard selection.
+- For deterministic preview behavior, one action must not mix conditional and unconditional transitions, and one action/condition branch must not lead to multiple destinations. Treat these as validation errors, not as arbitrary preview choices.
+- `Format` only normalizes structure, whitespace, indentation, and the final newline; it does not repair semantic errors.
+- `Generate D2` produces a deterministic, derived presentation artifact that preserves model title, fragments, containment, transition references, guards, verbs, complements, and effective `WIDTH`. Editing D2 does not update UITDL or the canvas; `Regenerate` discards D2 edits.
+- Rendering may use ELK or Dagre. There is no automatic engine fallback: report the selected engine, cause, fallback state, and impact, and preserve the last successful SVG when one exists.
+- Treat editable D2 as untrusted input. Sanitize rendered SVG with `DOMPurify` and the application's SVG-safe profile before DOM insertion, and fail visibly if no usable SVG remains.
+- Text-panel validation errors block `Apply to diagram`, `Preview HTML`, and `Generate D2`; warnings remain reportable without blocking those operations. Visual UITDL export blocks errors and asks for confirmation when only warnings exist.
+- Keep visible progress for operations that may take time, and keep status messages until the condition changes or the user dismisses them. Clipboard fallbacks and export failures must be observable.
 
 ## Inclusion and nesting semantics
 
@@ -67,7 +108,7 @@ Follow the current recommended grammar and semantics from the source paper and t
 - If the application state is `1`, the real application shows only `UI 1`; it does not show `UI 7`.
 - Therefore, `to 7` means the destination state is `UI 7`, and the available actions are the actions defined in `7` plus the actions of contained UIs such as `1`.
 - `to 1` means the destination state is `UI 1`, and the available actions are only the actions defined in `1`.
-- In `TRANSITION`, `from 7(1)` or `to 7(1)` refers to the specific drawn instance of `UI 1` contained in `UI 7` in that fragment. For destination semantics, `to 7(1)` still sends the user to `UI 1` as the underlying interface state; the difference from `to 1` is that the arrow is anchored to the contained drawn instance inside `UI 7` in that fragment. Treat `1` and `7(1)` as different references/instances of the same UI for diagram purposes, not as interchangeable references.
+- In `TRANSITION`, a parenthesized reference such as `from 7(1)`, `to 7(1)`, or `to 2(3(0))` refers to the specific drawn instance of the innermost UI inside its container chain in that fragment. For destination semantics, `to 7(1)` still sends the user to `UI 1` as the underlying interface state, and `to 2(3(0))` sends the user to `UI 0` alone. The outer UIs in the reference are visual/instance context for the arrow anchor; they do not make the destination state include those containers. Treat `1` and `7(1)` as different references/instances of the same UI for diagram purposes, not as interchangeable references.
 - One practical purpose of nested references in transitions is visual clarity: they let the model point an arrow to the specific drawn instance of a UI in a fragment so the diagram can be laid out cleanly and avoid unnecessary line crossings when the same UI appears multiple times.
 - This matters especially for reusable menus and navigation UIs. A menu UI may be drawn standalone in its own reusable fragment and also drawn nested inside many other UIs. In those cases, it is often clearer to draw transitions from the standalone menu instance in the dedicated reusable fragment, while using nested menu instances in other fragments only to show that the menu actions are available there.
 - Therefore, nested references in transitions serve both semantic and visual purposes: they identify the correct drawn instance for human-readable layout, and they determine whether the user is sent to a contained UI or to a container UI when the model needs to restrict or expand the set of available actions.
@@ -78,7 +119,7 @@ Follow the current recommended grammar and semantics from the source paper and t
 - For origin semantics, `from 7` means the triggering action must be defined in `UI 7`. `from 7(1)` means the triggering action must be defined in `UI 1`.
 - When reviewing reachability or completeness of a UI, evaluate effective outgoing behavior, not only direct transitions. A UI satisfies the `has an exit` requirement if it has at least one direct outgoing transition or at least one outgoing transition inherited by inclusion from a contained UI.
 - Therefore, a container UI may be valid without its own direct transition clauses when included reusable UIs already provide the effective exits available from that container state.
-- Use bracketed containment references in `DRAW` not only as syntax to render hierarchy, but with the semantic meaning supported by the extended source when modeling reusable menus, embedded UIs, or restricted interaction modes.
+- Use bracketed containment references in `DRAW` not only as syntax to render hierarchy, but with the semantic meaning defined in this skill and the bundled reference when modeling reusable menus, embedded UIs, or restricted interaction modes.
 - Distinguish explicitly between navigation UIs and non-navigation UIs. Navigation UIs exist primarily to provide reusable navigation actions and are natural candidates for inclusion in many other UIs.
 - Only use containment/inclusion for one of these two reasons: (1) the contained UI is a reusable element that appears in at least two distinct other UIs, or (2) the container UI is a true extension of the contained UI, so the model may intentionally navigate to the contained UI when only its actions should be available, or to the container UI when the user should have both the contained actions and the additional actions of the container.
 - Do not include one UI inside another merely because they are related in topic or because the nesting seems convenient. If an inclusion is not justified by reusable repetition or by a real extension relationship, it is semantically wrong and must be removed.
@@ -115,8 +156,10 @@ Follow the current recommended grammar and semantics from the source paper and t
 - Keep exactly one `UITD` per file, with `TITLE`.
 - Use explicit root keyword form: `UITD "Title" { ... }`.
 - Keep every `UIID` unique.
+- Use canonical decimal UIIDs; UITD Editor's internal parser rejects numeric UIIDs with leading zeros such as `01`.
 - Reference only previously defined `UI` identifiers from `DRAW` and `TRANSITION`.
 - Keep every fragment with at least one `DRAW` and one `TRANSITION`.
+- Ensure each fragment forms one connected component through transitions or required containment; remove isolated drawn UIs.
 - In each fragment, draw only UIs that are necessary for that fragment's subgraph: a drawn UI must be used as a transition origin, a transition destination, or as a containment/inclusion reference required to interpret those transitions.
 - Do not draw decorative or convenience-only UIs in a fragment. If a UI is not used by any transition in that fragment and is not required for a nested inclusion used by those transitions, remove it from that fragment.
 - If a validator requires every transition endpoint in a fragment to be drawn, satisfy that by drawing the required endpoint UIs, but do not add any extra unrelated UIs beyond those required endpoints and inclusion references.
@@ -127,6 +170,9 @@ Follow the current recommended grammar and semantics from the source paper and t
 - Keep quoted strings balanced and structurally safe.
 - In `UI` actions, use `ACTION ::= VERB COMPLEMENT ";"` (do not use `when user` there).
 - Keep `UI` actions strictly as user interactions over the current interface; do not model internal/automatic system processes as `actions`.
+- Keep action phrases readable in English, allowing Spanish UI labels or domain objects only when the whole phrase still makes sense. For direct interaction with a control label, prefer `clicks "eliminar"` when the label is `eliminar`. For semantic behavior, pair the verb with the affected domain object, such as `deletes "registro"`, not `deletes "eliminar"` or `deletes "Confirmar"`.
+- Distinguish UI gestures from semantic effects: `TRANSITION from 1 to 2 if user clicks "eliminar";` models pressing the visible control, while `TRANSITION from 1 to 2 if user deletes "registro";` models the intended effect.
+- Keep `AND "Condition"` as a guard, not an effect description. Correct: `TRANSITION from 3 to 11 if user clicks "Ver en Calendar" AND "ya existe autorizacion";` and `TRANSITION from 2 to 8 if user clicks "Google Calendar" AND "falta OAuth Client ID web";`. Incorrect: `TRANSITION from 6 to 1 if user clicks "Confirmar" AND "se elimina el registro";`.
 - If a modal dialog blocks interaction with the underlying page, model that dialog as a separate UI with its own actions; do not keep blocked base-page actions active in the same UI.
 - Allow empty `actions {}` when needed.
 - Use the original verb set: `clicks`, `submits`, `selects`, `types`, `toggles`, `uploads`, `downloads`, `saves`, `deletes`, `waits`.
