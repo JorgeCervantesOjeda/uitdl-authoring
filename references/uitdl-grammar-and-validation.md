@@ -42,6 +42,8 @@ QUOTEDSTRING ::= '"' QUOTEDCHAR* '"'
 - Interpret `UI` as graph nodes (interface states).
 - Interpret `TRANSITION` as directed labeled edges between nodes.
 - Treat `actions` in a `UI` as enabled interactions for that state.
+- Treat `waits` as a temporal user action: the user remains in the current UI while an observable completion, timeout, or expiration condition is reached and the UI changes without another gesture. Use natural complements such as `waits "for the data to finish loading"`.
+- Do not use `waits` for the beginning of loading or another process. The user action that starts the process must lead to the loading or progress UI; a completion `waits` action belongs to that UI and leads to the resulting destination UI.
 - Treat each `FRAGMENT` as a partial view/subgraph of the model.
 - Use bracketed `DRAW` references (for example `A[B[C]]`) to encode containment in the model and in the fragment view.
 - Use parenthesized transition references (for example `A(B(C))`) only to refer to the specific contained instance drawn inside a container when a transition must target or originate from that instance.
@@ -84,15 +86,16 @@ These rules describe the current editor behavior, not new UITDL grammar:
 8. Keep quoted strings balanced.
 9. Keep `DRAW` containment expressions and `TRANSITION` contained-instance references well-formed and acyclic.
 10. Keep `UI` actions in original form `VERB "Complement";` (no `when user` in `actions`).
-11. Model only user-triggered interactions in `actions`; represent automatic/internal system behavior through conditions or external assumptions, not as UI actions.
-12. Allow empty `actions {}` blocks when a UI has no declared actions yet.
-13. Use positive integer values for every `WIDTH n` at fragment or transition level.
-14. Apply wrapping by character count (including spaces) and never split words.
-15. Avoid placeholder self-loops for navigational actions; prefer explicit destination UIs that represent the real next context.
-16. Ensure operational states are reachable through at least one logical path (for example, an admin panel must have an inbound login/authorization path).
-17. Minimize redundant transitions: avoid parallel rules that represent the same event flow unless conditions are explicit, necessary, and non-overlapping.
-18. Ensure each fragment is one connected component through transitions or required containment; remove isolated drawn UIs.
-19. Keep fragments medium-grained: split oversized fragments by workflow stage, but avoid trivial one-off fragments that do not improve readability.
+11. Model user-triggered interactions in `actions`; allow `waits` when it represents the user remaining in the current UI until an observable automatic completion, timeout, or expiration changes the UI. Do not model the internal process itself as an action or use `waits` to start that process.
+12. For a blocking loading modal, model the flow as `initiating user action -> separate loading modal -> waits for completion -> loaded UI`; do not embed the modal in the base UI.
+13. Allow empty `actions {}` blocks when a UI has no declared actions yet.
+14. Use positive integer values for every `WIDTH n` at fragment or transition level.
+15. Apply wrapping by character count (including spaces) and never split words.
+16. Avoid placeholder self-loops for navigational actions; prefer explicit destination UIs that represent the real next context.
+17. Ensure operational states are reachable through at least one logical path (for example, an admin panel must have an inbound login/authorization path).
+18. Minimize redundant transitions: avoid parallel rules that represent the same event flow unless conditions are explicit, necessary, and non-overlapping.
+19. Ensure each fragment is one connected component through transitions or required containment; remove isolated drawn UIs.
+20. Keep fragments medium-grained: split oversized fragments by workflow stage, but avoid trivial one-off fragments that do not improve readability.
 
 ## Validator distribution guidance
 

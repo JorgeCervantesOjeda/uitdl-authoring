@@ -2,7 +2,7 @@
 name: uitdl-authoring
 description: Author, refactor, validate, and operationalize User Interface Transition Diagram Language (UITDL) specifications using the bundled grammar, semantics, validation checklist, and UITD Editor conventions. Use when Codex or ChatGPT must create or edit `.uitdl`-style text, define UITD/UI/FRAGMENT/TRANSITION structures, enforce grammar and semantic consistency, diagnose validation errors, or prepare UITDL content for UITD Editor.
 metadata:
-  version: "1.0.0"
+  version: "1.0.1"
 ---
 
 # UITDL Authoring
@@ -43,6 +43,7 @@ Follow the current recommended grammar and semantics from this skill and the bun
    - Optional `AND "Condition"`
    - Optional `WIDTH n`
    - Make the transition phrase read naturally as much as possible: use `clicks "visible control label"` for direct UI gestures, and use semantic verbs such as `deletes "affected object"` for behavioral effects.
+   - Treat `waits` as a temporal user action: the user remains in the current UI while an observable condition is reached and the system changes the UI without another gesture. Prefer natural complements such as `waits "for the data to finish loading"`.
    - When a dynamic or repeated control keeps the same visible label, declare one action using that label. If its destination or behavior depends on model data such as whether guards exist, express the alternatives as guarded transitions of that same action; never encode the model-derived mode as separate action labels such as `"Preview action without guard"` and `"Preview action with guard"`.
    - Example: declare `clicks "Preview action"` once, then use `AND "the selected action has no guards"` and `AND "the selected action has guards"` on separate transitions when those predicates are mutually exclusive and evaluated before the transition fires.
    - Treat `AND "Condition"` as a transition guard: the condition must be a proposition evaluated before or at the moment the transition is triggered, and it must determine whether that transition may fire.
@@ -169,13 +170,24 @@ Follow the current recommended grammar and semantics from this skill and the bun
 - Avoid duplicate transitions with same origin, destination, action, and condition within the same fragment. The same transition may appear in different fragments when those fragments present different views of the same model.
 - Keep quoted strings balanced and structurally safe.
 - In `UI` actions, use `ACTION ::= VERB COMPLEMENT ";"` (do not use `when user` there).
-- Keep `UI` actions strictly as user interactions over the current interface; do not model internal/automatic system processes as `actions`.
+- Keep `UI` actions as user-visible interactions over the current interface. `waits` is the exception for temporal waiting: it represents the user remaining in the interface while an observable automatic completion, timeout, or expiration changes the UI. Do not model the internal process itself as an action.
 - Keep action phrases readable in English, allowing Spanish UI labels or domain objects only when the whole phrase still makes sense. For direct interaction with a control label, prefer `clicks "eliminar"` when the label is `eliminar`. For semantic behavior, pair the verb with the affected domain object, such as `deletes "registro"`, not `deletes "eliminar"` or `deletes "Confirmar"`.
 - Distinguish UI gestures from semantic effects: `TRANSITION from 1 to 2 if user clicks "eliminar";` models pressing the visible control, while `TRANSITION from 1 to 2 if user deletes "registro";` models the intended effect.
 - Keep `AND "Condition"` as a guard, not an effect description. Correct: `TRANSITION from 3 to 11 if user clicks "Ver en Calendar" AND "ya existe autorizacion";` and `TRANSITION from 2 to 8 if user clicks "Google Calendar" AND "falta OAuth Client ID web";`. Incorrect: `TRANSITION from 6 to 1 if user clicks "Confirmar" AND "se elimina el registro";`.
 - If a modal dialog blocks interaction with the underlying page, model that dialog as a separate UI with its own actions; do not keep blocked base-page actions active in the same UI.
 - Allow empty `actions {}` when needed.
 - Use the original verb set: `clicks`, `submits`, `selects`, `types`, `toggles`, `uploads`, `downloads`, `saves`, `deletes`, `waits`.
+- Do not use `waits` to represent the beginning of a process. If a user action starts loading and opens a blocking modal, use the initiating action to transition from the base UI to the modal; declare a completion `waits` action on the modal and transition from the modal to the loaded destination when the condition is reached.
+- For a loading flow, use this shape:
+  ```text
+  UI 3 "Dashboard" actions { clicks "Account"; }
+  UI 21 "Account Loading Modal" actions { waits "for the data to finish loading"; }
+  UI 22 "Account" actions { }
+
+  TRANSITION from 3 to 21 if user clicks "Account";
+  TRANSITION from 21 to 22 if user waits "for the data to finish loading";
+  ```
+- Do not encode the start of loading as `waits "data loading"` or `waits "data is loading"`; those phrases describe a process beginning, not the user's temporal action or the completion condition.
 - Prefer behaviorally meaningful transitions over placeholder self-loops.
 - If an action implies a real context change (for example, `clicks "Iniciar sesion"` or `clicks "Registrarse"`), model a destination UI for that flow instead of `from X to X` unless explicit no-op behavior is intended.
 
